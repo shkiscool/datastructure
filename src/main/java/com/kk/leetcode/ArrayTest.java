@@ -1,6 +1,8 @@
 package com.kk.leetcode;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.junit.Test;
 
@@ -171,7 +173,8 @@ public class ArrayTest {
         System.out.println("结果=" + i);
     }
 
-    public int maxSubArray(int[] nums) {
+    // 正数增益
+    public int maxSubArray1(int[] nums) {
         int ant = nums[0];
         int sum = 0;
         for (int num : nums) {
@@ -184,7 +187,61 @@ public class ArrayTest {
         }
         return ant;
     }
+    // 分治法
 
+    public int maxSubArray(int[] nums) {
+        int len = nums.length;
+        if (len == 0) {
+            return 0;
+        }
+        return maxSubArraySum(nums, 0, len - 1);
+    }
+
+    private int maxCrossingSum(int[] nums, int left, int mid, int right) {
+        // 一定会包含 nums[mid] 这个元素
+        int sum = 0;
+        int leftSum = Integer.MIN_VALUE;
+        // 左半边包含 nums[mid] 元素，最多可以到什么地方
+        // 走到最边界，看看最值是什么
+        // 计算以 mid 结尾的最大的子数组的和
+        for (int i = mid; i >= left; i--) {
+            sum += nums[i];
+            if (sum > leftSum) {
+                leftSum = sum;
+            }
+        }
+        sum = 0;
+        int rightSum = Integer.MIN_VALUE;
+        // 右半边不包含 nums[mid] 元素，最多可以到什么地方
+        // 计算以 mid+1 开始的最大的子数组的和
+        for (int i = mid + 1; i <= right; i++) {
+            sum += nums[i];
+            if (sum > rightSum) {
+                rightSum = sum;
+            }
+        }
+        return leftSum + rightSum;
+
+    }
+
+    private int maxSubArraySum(int[] nums, int left, int right) {
+        if (left == right) {
+            return nums[left];
+        }
+        int mid = (left + right) >>> 1;
+        return max3(maxSubArraySum(nums, left, mid),
+                maxSubArraySum(nums, mid + 1, right),
+                maxCrossingSum(nums, left, mid, right));
+    }
+
+    private int max3(int num1, int num2, int num3) {
+        return Math.max(num1, Math.max(num2, num3));
+    }
+
+    /*    复杂度分析：
+
+        时间复杂度：O(N \log N)O(NlogN)，这里递归的深度是对数级别的，每一层需要遍历一遍数组（或者数组的一半、四分之一）。
+        空间复杂度：O(1)O(1)，仅需要常数个空间用于选取最大值。*/
     /*
      加一
      给定一个由整数组成的非空数组所表示的非负整数，在该数的基础上加一。
@@ -200,7 +257,7 @@ public class ArrayTest {
      解释: 输入数组表示数字 4321。*/
     @Test
     public void plusOne() {
-    int [] digits = new int[]{9,9,9};
+        int[] digits = new int[]{9, 9, 9};
         int[] ints = plusOne(digits);
     }
 
@@ -216,4 +273,118 @@ public class ArrayTest {
         digits[0] = 1;
         return digits;
     }
+
+    /*
+        合并两个有序数组
+        给定两个有序整数数组 nums1 和 nums2，将 nums2 合并到 nums1 中，使得 num1 成为一个有序数组。
+
+        说明:
+
+        初始化 nums1 和 nums2 的元素数量分别为 m 和 n。
+        你可以假设 nums1 有足够的空间（空间大小大于或等于 m + n）来保存 nums2 中的元素。
+        示例:
+
+        输入:
+        nums1 = [1,2,3,0,0,0], m = 3
+        nums2 = [2,5,6],       n = 3
+
+        输出: [1,2,2,3,5,6]*/
+    @Test
+    public void mergeTest() {
+        int[] nums1 = new int[]{2, 1, 7, 0, 0, 0};
+        int[] nums2 = new int[]{5, 2, 6};
+        merge(nums1, 3, nums2, 3);
+    }
+
+    // 暴力解法先合并在排序
+    public void merge(int[] nums1, int m, int[] nums2, int n) {
+        for (int i = 0; i < n; i++) {
+            nums1[m + i] = nums2[i];
+        }
+        for (int j = 0; j < nums1.length - 1; j++) {
+            for (int i = 0; i < nums1.length - 1 - j; i++) {
+                if (nums1[i] > nums1[i + 1]) {
+                    int temp = nums1[i];
+                    nums1[i] = nums1[i + 1];
+                    nums1[i + 1] = temp;
+                }
+            }
+        }
+        for (int v : nums1) {
+            System.out.print(v + " ");
+        }
+    }
+
+    // 双指针 从前往后复杂度分析
+    //
+    //时间复杂度 : O(n + m)O(n+m)。
+    //空间复杂度 : O(m)O(m)。
+    public void merge2(int[] nums1, int m, int[] nums2, int n) {
+        int[] nums1_copy = new int[m];
+        System.arraycopy(nums1, 0, nums1_copy, 0, m);
+        int p1 = 0;
+        int p2 = 0;
+        int p = 0;
+        while ((p1 < m) && (p2 < n)) {
+            nums1[p++] = (nums1_copy[p1] < nums2[p2]) ? nums1_copy[p1++] : nums2[p2++];
+        }
+        if (p1 < m) {
+            System.arraycopy(nums1_copy, p1, nums1, p1 + p2, m + n - p1 - p2);
+        }
+        if (p2 < n) {
+            System.arraycopy(nums2, p2, nums1, p1 + p2, m + n - p1 - p2);
+        }
+    }
+
+    // 双指针 从后往前
+    // 时间复杂度 : O(n + m)。
+    // 空间复杂度 : O(1)。
+    public void merge3(int[] nums1, int m, int[] nums2, int n) {
+        int p1 = m - 1;
+        int p2 = n - 1;
+        int p = m + n - 1;
+        while ((p1 >= 0) && (p2 >= 0)) {
+            nums1[p--] = (nums1[p1] < nums2[p2]) ? nums2[p2--] : nums1[p1--];
+        }
+        System.arraycopy(nums2, 0, nums1, 0, p2 + 1);
+    }
+
+    /*   杨辉三角
+       输入: 5
+       输出:
+               [
+               [1],
+               [1,1],
+               [1,2,1],
+               [1,3,3,1],
+               [1,4,6,4,1]
+               ]*/
+    @Test
+    public void generateTest() {
+        List<List<Integer>> generate = generate(5);
+        generate.forEach(System.out::println);
+    }
+
+    public List<List<Integer>> generate(int numRows) {
+        List<List<Integer>> result = new ArrayList<>();
+        if (numRows == 0) {
+            return result;
+        }
+        result.add(new ArrayList<>());
+        result.get(0).add(1);
+
+        for (int rowNum = 1; rowNum < numRows; rowNum++) {
+            List<Integer> row = new ArrayList<>();
+            List<Integer> prevRow = result.get(rowNum - 1);
+            row.add(1);
+            for (int j = 1; j < rowNum; j++) {
+                row.add(prevRow.get(j - 1) + prevRow.get(j));
+            }
+            row.add(1);
+            result.add(row);
+
+        }
+        return result;
+    }
+
 }
